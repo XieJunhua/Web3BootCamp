@@ -19,7 +19,7 @@ contract Bank {
         emit Received(msg.sender, msg.value);
     }
 
-    // add money to my account
+    //add money to my account
     function save() private {
         uint256 amount = msg.value;
         address sender = msg.sender;
@@ -37,12 +37,19 @@ contract Bank {
             }
             list.push(msg.sender);
         } else {
-            for (uint i = 0; i < list.length; i++) {
-                uint256 amount1 = amounts[list[i]];
-                if (amount1 < amounts[msg.sender] + msg.value) {
-                    list[i] = msg.sender;
-                    break;
+            // find the minimum value and the index
+            uint256 index = 0;
+            uint256 minValue = amounts[list[0]];
+            for (uint i = 1; i < list.length; i++) {
+                if (amounts[list[i]] <= minValue) {
+                    index = i;
+                    minValue = amounts[list[i]];
                 }
+            }
+
+            // compare the minimum value and the value of current account
+            if (amounts[msg.sender] >= minValue) {
+                list[index] = msg.sender;
             }
         }
     }
