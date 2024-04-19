@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.6.12 <0.9.0;
 
+
 error WithdrawerNotManager();
 
 contract Bank {
@@ -11,13 +12,14 @@ contract Bank {
     struct Result {
         address addre;
         uint256 amount;
+
     }
 
     event Received(address, uint);
     receive() external payable {
         save();
         emit Received(msg.sender, msg.value);
-    }
+    } 
 
     //add money to my account
     function save() private {
@@ -26,45 +28,45 @@ contract Bank {
         uint256 amount_temp = amounts[sender];
         uint256 amount_total = amount_temp + amount;
         amounts[sender] = amount_total;
-    }
-
-    function saveMoney() public payable {
-        save();
-
-        if (list.length < 3) {
-            if (list.length > 0 && list[list.length - 1] == msg.sender) {
+        if(list.length < 3 ) { 
+            if (list.length > 0 && list[list.length - 1] == sender) {
                 list.pop();
             }
-            list.push(msg.sender);
+            list.push(sender);
         } else {
             // find the minimum value and the index
             uint256 index = 0;
-            uint256 minValue = amounts[list[0]];
+            uint256 minValue = amounts[list[0]]; 
             for (uint i = 1; i < list.length; i++) {
                 if (amounts[list[i]] <= minValue) {
                     index = i;
-                    minValue = amounts[list[i]];
+                    minValue = amounts[list[i]]; 
                 }
-            }
+            } 
 
             // compare the minimum value and the value of current account
-            if (amounts[msg.sender] >= minValue) {
-                list[index] = msg.sender;
+            if (amounts[sender] >= minValue) {
+                list[index] = sender;
             }
         }
     }
 
-    function queryMyAccount() public view returns (Result memory) {
+    function saveMoney() payable public {
+        save();            
+    }
+
+    
+    function queryMyAccount()public view returns (Result memory) {
         return Result(msg.sender, amounts[msg.sender]);
     }
 
-    function listTop3Accounts() public view returns (address[] memory) {
+    function listTop3Accounts()public view returns (address[] memory) {
         return list;
     }
 
-    function withdraw() public {
+    function withdraw()public{
         address sender = msg.sender;
-
+        
         if (sender == manager_address) {
             payable(sender).transfer(address(this).balance);
         } else {
@@ -75,4 +77,5 @@ contract Bank {
     function queryAllBalance() public view returns (uint256) {
         return address(this).balance;
     }
+
 }
