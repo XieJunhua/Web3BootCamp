@@ -2,7 +2,7 @@
 pragma solidity >=0.6.12 <0.9.0;
 
 
-error WithdrawerNotManager();
+error WithdrawerNotManager(address, address);
 
 contract Bank {
     address manager_address = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
@@ -16,6 +16,7 @@ contract Bank {
     }
 
     event Received(address, uint);
+    event addresses(string, address, address);
     receive() external payable virtual  {
         save();
         emit Received(msg.sender, msg.value);
@@ -66,11 +67,13 @@ contract Bank {
 
     function withdraw()public virtual {
         address sender = msg.sender;
+
+        emit addresses("final call", sender, manager_address);
         
-        if (sender == manager_address) {
+        if (sender == getManagerAddress()) {
             payable(sender).transfer(address(this).balance);
         } else {
-            revert WithdrawerNotManager();
+            revert WithdrawerNotManager(sender, manager_address);
         }
     }
 
@@ -78,36 +81,13 @@ contract Bank {
         return address(this).balance;
     }
 
+    function getManagerAddress() public view returns (address) {
+        return manager_address;
+    }
+
 }
 
-// feference to:  https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
-abstract contract Ownable{
-    address private _owner;
-
-    error OwnableInvalidOwner(address owner);
-
-    constructor(address initialOwner) {
-        _transferOwnership(initialOwner);
-    }
-
-    function _transferOwnership(address newOwner) internal virtual {
-        _owner = newOwner;
-    }
-
-    // modifier 
-    modifier onlyOwner() {
-        require(_owner == msg.sender);
-        _;
-    }
-    
-}
-
-contract BigBank is Bank, Ownable {
-
-    constructor(address initialOwner) Ownable(initialOwner){
-        // 兼容老的Bank代码的权限控制； 新的权限控制在Ownable中进行
-        manager_address = initialOwner;
-    }
+contract BigBank is Bank {
 
     modifier receiveThreshold{
         require(msg.value > 0.001 ether);
@@ -118,17 +98,40 @@ contract BigBank is Bank, Ownable {
         super.save();
     }
 
-    function test_modifier() public payable  receiveThreshold {
-        super.queryAllBalance();
-    }
-
-    function withdraw() public override  onlyOwner{
+    function withdraw() public override{
         super.withdraw();
 
     }
 
-    
+    function changeManager(address _address) public {
+        manager_address = _address;
+    }  
 }
 
+contract Ownable{
+
+    address bankAddress;
+    event Log(address, string);
+
+    event PrintDoubleAddress(address, address);
+
+    constructor(address _address) {
+        bankAddress = _address;
+    }
+
+    function withdraw() public  {
+        emit Log(msg.sender, "init_address_withdraw");
+
+        BigBank bb = BigBank(payable(bankAddress));
+        bb.queryAllBalance();
 
 
+        bb.withdraw();
+        emit Log(msg.sender, "return address_withdraw");
+        
+    }
+
+    // 如果没有定义receive方法，那么其他合约向这个合约地址转账的时候会报错
+    receive() external payable { }
+
+}
