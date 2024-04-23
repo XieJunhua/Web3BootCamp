@@ -42,6 +42,7 @@ contract NFTMarket is IERC721Receiver {
         return products[_tokenId];
     }
 
+    // buyNFT need to approve to this contract
     function buyNFT(uint256 _tokenId) public returns (bool) {
         NFT memory n = products[_tokenId];
         uint256 price = n.price;
